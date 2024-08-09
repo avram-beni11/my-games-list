@@ -10,7 +10,7 @@ export default function Login() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24 bg-[#343434]">
       <div className="h-[500px] w-[350px] bg-[#F7FFF7] m-auto flex flex-col justify-center items-center rounded-md shadow-lg">
-        <p className="text-[#F39C6B] text-2xl mb-10">MyGamesList</p>
+        <p className="text-[#F39C6B] text-2xl mb-10 font-bold">MyGamesList</p>
         <input className="h-10 w-auto text-black bg-[#F7FFF7] border-solid border-b-2 border-[#343434] focus:border-[#F39C6B] mb-4 outline-none" placeholder="Email" type="text" name="search" />
         <input className="h-10 w-auto text-black bg-[#F7FFF7] border-solid border-b-2 border-[#343434] focus:border-[#F39C6B] mb-4 outline-none" placeholder="Password" type="password" name="search" />
         <button className="rounded-full bg-[#F39C6B] w-1/2 h-10 mt-6 hover:bg-[#d68a5e]" onClick={Log}>Login</button>
