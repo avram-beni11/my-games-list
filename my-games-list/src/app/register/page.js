@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { db, auth } from "../../firebase/firebase"; // Import your Firebase config
 import { collection, addDoc } from "firebase/firestore/lite";
@@ -7,40 +7,83 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 
 export default function Register() {
   const router = useRouter();
-
   const [step, setStep] = useState(1);
+  const [email, setEmail] = useState("");
+  const [pass1, setPass1] = useState("");
+  const [pass2, setPass2] = useState("");
+  const [username, setUsername] = useState("");
+  const [error, setError] = useState("");
+  const [isNextEnabled, setIsNextEnabled] = useState(false);
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePassword = (password) => {
+    return password.length >= 6; 
+  };
+
+  useEffect(() => {
+    if (
+      validateEmail(email) &&
+      validatePassword(pass1) &&
+      pass1 === pass2 &&
+      email !== "" &&
+      pass1 !== "" &&
+      pass2 !== ""
+    ) {
+      setIsNextEnabled(true);
+    } else {
+      setIsNextEnabled(false);
+    }
+  }, [email, pass1, pass2]);
+
+  const handleNext = () => {
+    if (step === 1) {
+      if (isNextEnabled) {
+        setStep(2);
+      } else {
+        setError("Please fill in all fields correctly.");
+      }
+    } else {
+      handleRegistration();
+    }
+  };
+
+  const handleRegistration = async () => {
+    if (username === "") {
+      setError("Username cannot be empty");
+      return;
+    }
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        pass1
+      );
+
+      const user = userCredential.user;
+
+      await addDoc(collection(db, "users"), {
+        uid: user.uid,
+        email: user.email,
+        username: username,
+        createdAt: new Date(),
+      });
+      
+      router.push("/login");
+    } catch (error) {
+      setError(error.message);
+    }
+  };
 
   const svgBack = () => {
     if (step >= 2) {
       setStep(1);
     }
   };
-
-  const handleNext = () => {
-    setStep(step + 1);
-  };
-
-  const [email, setEmail] = useState("");
-  const [pass1, setPass1] = useState("");
-  const [pass2, setPass2] = useState("");
-  const [username, setUsername] = useState("");
-  const [error, setError] = useState("");
-
-  const Reg = async () => {
-    if (pass1 !== pass2) {
-      setError("Passwords do not match");
-      return;
-    }
-  };
-
-  // async function getUsers(db) {
-  //     const usersCol = collection(db, 'users');
-  //     const usersDoc = await getDocs(usersCol);
-  //     const userList = usersDoc.docs.map(doc => doc.data());
-  //     console.log(userList[0]);
-  //     return userList;
-  // }
-  //getUsers(db);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24 bg-[#343434]">
@@ -50,7 +93,7 @@ export default function Register() {
       >
         <p className="text-[#F39C6B] text-2xl mb-10 font-bold">MyGamesList</p>
 
-        {step === 1 ? ( //if step = 1, display this content
+        {step === 1 ? (
           <>
             <input
               id="email"
@@ -58,7 +101,9 @@ export default function Register() {
               required
               placeholder="Email"
               type="text"
-              name="search"
+              name="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
             <input
               id="pass1"
@@ -66,7 +111,9 @@ export default function Register() {
               required
               placeholder="Password"
               type="password"
-              name="search"
+              name="pass1"
+              value={pass1}
+              onChange={(e) => setPass1(e.target.value)}
             />
             <input
               id="pass2"
@@ -74,12 +121,13 @@ export default function Register() {
               required
               placeholder="Confirm Password"
               type="password"
-              name="search"
+              name="pass2"
+              value={pass2}
+              onChange={(e) => setPass2(e.target.value)}
             />
             {error && <p className="text-red-500">{error}</p>}
           </>
         ) : (
-          //anything othe than 1, display something else
           <>
             <button
               onClick={svgBack}
@@ -107,29 +155,23 @@ export default function Register() {
               required
               placeholder="Username"
               type="text"
-              name="search"
+              name="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
             />
-            <div
-              class="relative w-36 h-36 rounded-full bg-gray-200 cursor-pointer shadow-md flex items-center justify-center"
-              onClick={() => document.getElementById('profile-pic-input').click()}
-            >
-              <img
-                id="profile-pic"
-                class="w-full h-full object-cover rounded-full hidden"
-              ></img>
-              <span id="placeholder" class="text-gray-400 text-4xl">
-                +
-              </span>
-            </div>
-            <input type="file" id="img" name="img" accept="image/*" class="hidden" onchange="loadFile(event)"></input>
-          </>//end of useState
+          </>
         )}
 
         <button
-          className="rounded-full bg-[#F39C6B] w-1/2 h-10 mt-6 hover:bg-[#d68a5e]"
+          className={`rounded-full w-1/2 h-10 mt-6 ${
+            isNextEnabled || step === 2
+              ? "bg-[#F39C6B] hover:bg-[#d68a5e]"
+              : "bg-gray-400"
+          }`}
           onClick={handleNext}
+          disabled={!isNextEnabled && step === 1}
         >
-          Next
+          {step === 1 ? "Next" : "Register"}
         </button>
         <p className="text-black mt-6 text-sm">
           Already have an account? Sign in{" "}
